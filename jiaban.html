@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>加班记录</title>
+<style>
+:root{--bg:#f2f5f7;--card:#fff;--ink:#14202b;--sub:#6b7a88;--line:#dde4ea;--sel:#0f6e8c;--selt:#fff;--noon:#d98a00;--aft:#2563c9;--pay:#0b7a4b;--err:#c0392b}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1519;--card:#18222a;--ink:#e8eef2;--sub:#8fa0ad;--line:#2a3742;--sel:#3ba6c8;--selt:#08161c;--noon:#f0a92e;--aft:#6ea2f5;--pay:#4fd08e;--err:#ff7b6b}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:480px;margin:0 auto;padding:14px 14px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 8px}
+.hide{display:none!important}
+input,button,select{font:inherit;color:var(--ink)}
+.in,select{width:100%;height:46px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:0 12px;margin-bottom:10px}
+.go{width:100%;height:48px;border:0;border-radius:12px;background:var(--sel);color:var(--selt);font-weight:600}
+.go:disabled{opacity:.4}
+.sm{height:36px;padding:0 14px;border:1px solid var(--sel);border-radius:9px;background:none;color:var(--sel);font-size:14px;white-space:nowrap}
+.link{border:0;background:none;color:var(--sel);padding:8px 0}
+.msg{color:var(--sub);font-size:13px;margin-top:6px}.msg.e{color:var(--err)}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;color:var(--sub)}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{flex:1;height:40px;border:1px solid var(--line);border-radius:10px;background:none}
+.tab.on{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.head b{font-size:19px}
+.nav{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:none;font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;color:var(--sub);font-size:13px}
+.day{position:relative;aspect-ratio:1/1.05;border-radius:10px;border:1px solid transparent;background:none;padding:0}
+.day.sel{background:var(--sel);color:var(--selt);font-weight:600}
+.day.today{border-color:var(--sel)}
+.dots{position:absolute;bottom:4px;left:0;right:0;display:flex;justify-content:center;gap:3px}
+.dot{width:6px;height:6px;border-radius:50%}.dot.noon{background:var(--noon)}.dot.afternoon{background:var(--aft)}
+.day.sel .dot{outline:1.5px solid var(--selt)}
+.chips{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;border-radius:18px;padding:6px 12px;font-size:14px}
+.seg{display:flex;gap:8px;margin-bottom:10px}
+.seg button{flex:1;height:42px;border:1px solid var(--line);border-radius:10px;background:none}
+.seg button.on{border-color:var(--sel);box-shadow:inset 0 0 0 1px var(--sel);font-weight:600}
+.row{display:flex;gap:10px;align-items:center}.row>.f{flex:1}
+label.l{display:block;font-size:13px;color:var(--sub);margin-bottom:4px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.sum small{display:block;color:var(--sub);font-size:12px}.sum b{font-size:21px}
+.pay{color:var(--pay)}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:15px}
+.item:first-child{border-top:0}
+.t{color:var(--sub);font-size:13px}
+.del{border:0;background:none;color:var(--sub);font-size:13px}
+.empty{color:var(--sub);text-align:center;padding:12px 0;font-size:14px}
+details{border-top:1px solid var(--line);padding:10px 0}
+details:first-of-type{border-top:0}
+summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer;list-style:none}
+.subl{padding:6px 0 0 4px;font-size:14px;color:var(--sub)}
+.dot-i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.mem{border-top:1px solid var(--line);padding:10px 0}
+.mem:first-child{border-top:0}
+.mem .row select{margin:0;height:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="login" class="card hide">
+  <h2>邮箱登录</h2>
+  <div id="s1">
+    <input class="in" id="email" type="email" inputmode="email" autocomplete="email" placeholder="输入你的邮箱">
+    <button class="go" id="send">发送验证码</button>
+  </div>
+  <div id="s2" class="hide">
+    <div class="msg" style="margin:0 0 8px">验证码已发送到 <span id="sentTo"></span></div>
+    <input class="in" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="输入邮件里的验证码">
+    <button class="go" id="verify">登录</button>
+    <button class="link" id="back">换个邮箱</button>
+  </div>
+  <div class="msg" id="lmsg"></div>
+</div>
+
+<div id="app" class="hide">
+  <div class="top"><span id="who"></span><span><button class="link" id="rename">改名</button> <button class="link" id="out">退出</button></span></div>
+  <div class="tabs"><button class="tab on" id="tMine">我的加班</button><button class="tab hide" id="tTeam">团队汇总</button><button class="tab hide" id="tAdmin">分组管理</button></div>
+
+  <div class="card" id="monthCard">
+    <div class="head"><button class="nav" id="prev">‹</button><b id="title"></b><button class="nav" id="next">›</button></div>
+    <div id="calBox">
+      <div class="grid" id="dow"></div><div class="grid" id="cal"></div>
+      <div class="chips"><button class="chip" id="wk">选本月工作日</button><button class="chip" id="all">选本月全部</button><button class="chip" id="clr">清除选择</button></div>
+    </div>
+  </div>
+
+  <div id="mine">
+    <div class="card hide" id="beLeader">
+      <h2>我是小组长</h2>
+      <div class="msg" style="margin:0 0 8px">创建你自己的小组，就能把邀请链接发给组员，他们登录后会自动加入。只有你和大组长能看到组员的加班。</div>
+      <input class="in" id="leaderTeam" placeholder="小组名称，如：生产一组">
+      <button class="go" id="beLeaderBtn">注册成为小组长</button>
+      <div class="msg e" id="blmsg"></div>
+    </div>
+    <div class="card">
+      <h2>给所选日期添加加班 <span id="cnt" class="t" style="font-weight:400"></span></h2>
+      <div class="seg"><button id="pN" class="on">中午</button><button id="pA">下午</button></div>
+      <div class="row">
+        <div class="f"><label class="l">开始时间</label><input class="in" id="st" type="time" value="12:00" step="60"></div>
+        <div class="f"><label class="l">结束时间</label><input class="in" id="et" type="time" value="13:00" step="60"></div>
+      </div>
+      <div class="msg" id="calc" style="margin:-4px 0 10px"></div>
+      <button class="go" id="apply" disabled>先在日历里点选日期</button>
+      <div class="msg">同一时段已有记录的日期会被覆盖。按半小时计，不足 30 分钟的零头不计。</div>
+      <div class="msg e" id="amsg"></div>
+    </div>
+    <div class="card">
+      <h2 id="sumT">本月统计</h2>
+      <div class="sum"><div><small>中午合计</small><b id="sN">0</b><small>小时</small></div><div><small>下午合计</small><b id="sA">0</b><small>小时</small></div><div><small>加班工资</small><b class="pay" id="sP">¥0</b><small id="wg"></small></div></div>
+    </div>
+    <div class="card"><h2>加班明细</h2><div id="list"></div></div>
+  </div>
+
+  <div id="team" class="hide">
+    <div class="card">
+      <div id="filtBox" class="hide">
+        <label class="l">查看范围</label>
+        <select id="filt"></select>
+        <button class="go" id="export" style="margin-bottom:6px">导出本月表格（Excel 可打开）</button>
+        <div class="msg" id="xmsg" style="margin:0 0 8px"></div>
+      </div>
+      <button class="sm" id="invite" style="margin-bottom:6px">复制小组邀请链接</button>
+      <div class="msg" id="imsg" style="margin:0 0 10px"></div>
+      <h2 id="teamT">汇总</h2>
+      <div id="tlist"></div>
+    </div>
+  </div>
+
+  <div id="admin" class="hide">
+    <div class="card">
+      <h2>小组</h2>
+      <div class="row"><div class="f"><input class="in" id="newTeam" placeholder="新小组名称，如：一组" style="margin:0"></div><button class="sm" id="addTeam">添加</button></div>
+      <div id="teamList" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>成员分组与身份</h2>
+      <div class="msg" style="margin:0 0 6px">同事要先登录过一次才会出现在这里。</div>
+      <div id="memList"></div>
+      <div class="msg e" id="admsg"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+<script>
+const CFG = { url: 'https://hszkcinfhmfftmsgiwpl.supabase.co', key: 'sb_publishable_zzxXQiLGMt5Sio0Uf5CcPQ_QSl-hd49' };
+const billed = m => Math.floor(m / 30) * 0.5;
+const ROLE = { member: '成员', leader: '小组长', admin: '大组长' };
+const $ = id => document.getElementById(id), pad = n => String(n).padStart(2, '0');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => String(Math.round(n * 100) / 100), PN = { noon: '中午', afternoon: '下午' };
+const key = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const hm = t => t.slice(0, 5), toMin = t => { const [a, b] = t.split(':'); return +a * 60 + +b; };
+const now = new Date(), todayK = key(now.getFullYear(), now.getMonth(), now.getDate());
+let sb, me = null, recs = [], profs = [], teams = [], sel = {}, Y = now.getFullYear(), M = now.getMonth(), tab = 'mine', period = 'noon', email = '', filt = 'all';
+const show = (id, on) => $(id).classList.toggle('hide', !on);
+const teamName = id => (teams.find(t => t.id === id) || {}).name || '未分组';
+const pname = p => p ? (p.name || p.email) : '未知';
+
+try { const jp = new URLSearchParams(location.search).get('join'); if (jp) localStorage.setItem('joinCode', jp); } catch (e) {}
+sb = supabase.createClient(CFG.url, CFG.key);
+sb.auth.getSession().then(({ data }) => data.session ? boot(data.session.user) : showLogin());
+sb.auth.onAuthStateChange((ev, s) => {
+  if (ev === 'SIGNED_OUT') { me = null; showLogin(); }
+  else if (ev === 'SIGNED_IN' && s && (!me || me.id !== s.user.id)) boot(s.user);
+});
+
+function showLogin() { show('login', true); show('app', false); show('s1', true); show('s2', false); }
+const lmsg = (t, e) => { $('lmsg').textContent = t; $('lmsg').className = 'msg' + (e ? ' e' : ''); };
+$('send').onclick = async () => {
+  email = $('email').value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return lmsg('请输入正确的邮箱', 1);
+  $('send').disabled = true; lmsg('发送中…');
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  $('send').disabled = false;
+  if (error) return lmsg('发送失败：' + error.message, 1);
+  $('sentTo').textContent = email; show('s1', false); show('s2', true); lmsg('');
+};
+$('back').onclick = () => { show('s2', false); show('s1', true); lmsg(''); };
+$('verify').onclick = async () => {
+  const token = $('code').value.trim(); if (!token) return lmsg('请输入验证码', 1);
+  $('verify').disabled = true; lmsg('验证中…');
+  const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
+  $('verify').disabled = false;
+  if (error) lmsg('验证码不对或已过期：' + error.message, 1);
+};
+$('out').onclick = () => sb.auth.signOut();
+$('rename').onclick = async () => {
+  const n = prompt('显示名字（组长能看到）', me.name || ''); if (!n || !n.trim()) return;
+  const { error } = await sb.from('profiles').update({ name: n.trim() }).eq('id', me.id);
+  if (error) return alert('修改失败：' + error.message);
+  me.name = n.trim(); setWho(); load();
+};
+
+function setWho() {
+  $('who').textContent = (me.name || me.email) + '（' + ROLE[me.role] + (me.role === 'leader' && me.team_id ? ' · ' + teamName(me.team_id) : '') + '）';
+}
+async function boot(user) {
+  const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if (error) { showLogin(); return lmsg('读取账号失败：' + error.message, 1); }
+  me = data; show('login', false); show('app', true);
+  let jc = null; try { jc = localStorage.getItem('joinCode'); } catch (e) {}
+  if (jc && me.role === 'member' && !me.team_id) {
+    const j = await sb.rpc('join_team', { p_code: jc });
+    if (j.error) alert('邀请链接无效：' + j.error.message);
+    else { const r2 = await sb.from('profiles').select('*').eq('id', user.id).single(); if (r2.data) me = r2.data; alert('已加入小组：' + j.data); }
+  }
+  if (jc) { try { localStorage.removeItem('joinCode'); } catch (e) {} history.replaceState(null, '', location.pathname); }
+  const t = await sb.from('teams').select('*').order('name'); teams = t.data || [];
+  setWho();
+  show('beLeader', me.role === 'member' && !me.team_id);
+  show('tTeam', me.role !== 'member'); show('tAdmin', me.role === 'admin');
+  $('wg').textContent = me.hourly_wage + ' 元/小时';
+  setTab('mine');
+}
+function setTab(t) {
+  tab = t; sel = {};
+  ['Mine', 'Team', 'Admin'].forEach(n => $('t' + n).classList.toggle('on', t === n.toLowerCase()));
+  show('mine', t === 'mine'); show('team', t === 'team'); show('admin', t === 'admin');
+  show('monthCard', t !== 'admin'); show('calBox', t === 'mine');
+  load();
+}
+$('tMine').onclick = () => setTab('mine'); $('tTeam').onclick = () => setTab('team'); $('tAdmin').onclick = () => setTab('admin');
+
+async function load() {
+  if (tab !== 'mine') {
+    const [p, t] = await Promise.all([sb.from('profiles').select('*').order('name'), sb.from('teams').select('*').order('name')]);
+    profs = p.data || []; teams = t.data || [];
+  }
+  if (tab === 'admin') return renderAdmin();
+  const a = key(Y, M, 1), b = key(Y, M, new Date(Y, M + 1, 0).getDate());
+  let q = sb.from('overtime_records').select('*').gte('work_date', a).lte('work_date', b).order('work_date').order('start_time');
+  if (tab === 'mine') q = q.eq('user_id', me.id);
+  const r = await q; if (r.error) return alert('读取失败：' + r.error.message);
+  recs = r.data; render();
+}
+
+$('dow').innerHTML = '日一二三四五六'.split('').map(d => `<div class="dow">${d}</div>`).join('');
+function render() {
+  $('title').textContent = `${Y}年${M + 1}月`;
+  tab === 'mine' ? renderMine() : renderTeam();
+}
+function renderMine() {
+  const first = new Date(Y, M, 1).getDay(), days = new Date(Y, M + 1, 0).getDate(); let h = '';
+  for (let i = 0; i < first; i++) h += '<div></div>';
+  for (let d = 1; d <= days; d++) {
+    const k = key(Y, M, d), ps = [...new Set(recs.filter(r => r.work_date === k).map(r => r.period))];
+    h += `<button class="day${sel[k] ? ' sel' : ''}${k === todayK ? ' today' : ''}" data-k="${k}">${d}` +
+      (ps.length ? `<span class="dots">${ps.map(p => `<i class="dot ${p}"></i>`).join('')}</span>` : '') + '</button>';
+  }
+  $('cal').innerHTML = h;
+  const n = Object.keys(sel).length;
+  $('cnt').textContent = n ? `(已选 ${n} 天)` : ''; $('apply').disabled = !n;
+  $('apply').textContent = n ? `添加到已选的 ${n} 天` : '先在日历里点选日期';
+  let sn = 0, sa = 0;
+  recs.forEach(r => { r.period === 'noon' ? sn += billed(r.minutes) : sa += billed(r.minutes); });
+  $('sN').textContent = fmt(sn); $('sA').textContent = fmt(sa); $('sP').textContent = '¥' + fmt((sn + sa) * me.hourly_wage);
+  $('sumT').textContent = `${M + 1}月统计（共 ${new Set(recs.map(r => r.work_date)).size} 天）`;
+  $('list').innerHTML = recs.map(r => {
+    const d = +r.work_date.slice(8), wd = '日一二三四五六'[new Date(Y, M, d).getDay()];
+    return `<div class="item"><div><div>${M + 1}月${d}日 周${wd}　<span class="dot-i" style="background:var(--${r.period === 'noon' ? 'noon' : 'aft'})"></span>${PN[r.period]}</div>` +
+      `<div class="t">${hm(r.start_time)}–${hm(r.end_time)}，共 ${r.minutes} 分钟，计 ${fmt(billed(r.minutes))} 小时</div></div>` +
+      `<div style="text-align:right"><b class="pay">¥${fmt(billed(r.minutes) * me.hourly_wage)}</b><br><button class="del" data-del="${r.id}">删除</button></div></div>`;
+  }).join('') || '<div class="empty">本月还没有加班记录</div>';
+}
+
+function visibleProfs() {
+  if (me.role !== 'admin' || filt === 'all') return profs;
+  return profs.filter(p => filt === 'none' ? !p.team_id : p.team_id === filt);
+}
+function renderTeam() {
+  show('filtBox', me.role === 'admin');
+  if (me.role === 'admin') {
+    const opts = [['all', '全部人员'], ...teams.map(t => [t.id, t.name]), ['none', '未分组']];
+    if (!opts.some(o => o[0] === filt)) filt = 'all';
+    $('filt').innerHTML = opts.map(([v, n]) => `<option value="${v}"${v === filt ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  }
+  const vp = visibleProfs(); let h = '', tot = 0, tp = 0;
+  vp.forEach(p => {
+    const rs = recs.filter(r => r.user_id === p.id); if (!rs.length) return;
+    let n = 0, a = 0; rs.forEach(r => r.period === 'noon' ? n += billed(r.minutes) : a += billed(r.minutes));
+    const pay = (n + a) * p.hourly_wage; tot += n + a; tp += pay;
+    h += `<details><summary><span><b>${esc(pname(p))}</b>${me.role === 'admin' ? `<br><span class="t">${esc(teamName(p.team_id))}</span>` : ''}</span><span class="t" style="text-align:right">中午 ${fmt(n)}h　下午 ${fmt(a)}h<br><b class="pay">¥${fmt(pay)}</b></span></summary><div class="subl">` +
+      rs.map(r => `${+r.work_date.slice(5, 7)}月${+r.work_date.slice(8)}日 ${PN[r.period]} ${hm(r.start_time)}–${hm(r.end_time)}（${r.minutes}分钟，计${fmt(billed(r.minutes))}h）`).join('<br>') + '</div></details>';
+  });
+  $('tlist').innerHTML = (h || '<div class="empty">本月还没有人登记加班</div>') +
+    `<div class="item"><b>合计</b><span><b>${fmt(tot)}</b> 小时　<b class="pay">¥${fmt(tp)}</b></span></div>`;
+  const scope = me.role === 'admin' ? ($('filt').selectedOptions[0] || {}).textContent : (me.team_id ? teamName(me.team_id) : '本组');
+  $('teamT').textContent = `${M + 1}月汇总 · ${scope}`;
+  if (me.role === 'leader' && !me.team_id) $('tlist').innerHTML = '<div class="empty">你还没有被分到小组，请联系大组长。</div>';
+}
+$('beLeaderBtn').onclick = async () => {
+  const n = $('leaderTeam').value.trim(); $('blmsg').textContent = '';
+  if (!n) return $('blmsg').textContent = '请填写小组名称';
+  if (!confirm('确认成为小组长，并创建小组「' + n + '」？')) return;
+  const { error } = await sb.rpc('become_leader', { p_team_name: n });
+  if (error) return $('blmsg').textContent = '失败：' + error.message;
+  await boot({ id: me.id }); setTab('team');
+};
+$('invite').onclick = async () => {
+  const tid = me.role === 'admin' ? filt : me.team_id;
+  const t = teams.find(x => x.id === tid);
+  if (!t) { $('imsg').textContent = me.role === 'admin' ? '请先在"查看范围"里选一个小组' : '你还没有被分到小组'; return; }
+  const url = location.origin + location.pathname + '?join=' + t.invite_code;
+  try { await navigator.clipboard.writeText(url); $('imsg').textContent = '已复制。新同事点链接登录后，会自动加入「' + t.name + '」'; }
+  catch (e) { prompt('长按全选复制这条链接', url); }
+};
+$('filt').onchange =() => { filt = $('filt').value; renderTeam(); };
+
+$('export').onclick = () => {
+  const vp = visibleProfs(), byId = Object.fromEntries(vp.map(p => [p.id, p]));
+  const rows = recs.filter(r => byId[r.user_id]);
+  if (!rows.length) { $('xmsg').textContent = '当前范围本月没有记录可导出'; return; }
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const out = [['姓名', '邮箱', '小组', '日期', '时段', '开始', '结束', '分钟', '计时(小时)', '时薪', '金额']];
+  let th = 0, tm = 0;
+  rows.sort((a, b) => pname(byId[a.user_id]).localeCompare(pname(byId[b.user_id]), 'zh') || a.work_date.localeCompare(b.work_date));
+  rows.forEach(r => {
+    const p = byId[r.user_id], h = billed(r.minutes), m = h * p.hourly_wage; th += h; tm += m;
+    out.push([pname(p), p.email, teamName(p.team_id), r.work_date, PN[r.period], hm(r.start_time), hm(r.end_time), r.minutes, h, p.hourly_wage, m]);
+  });
+  out.push(['合计', '', '', '', '', '', '', '', th, '', tm]);
+  const csv = '\uFEFF' + out.map(r => r.map(q).join(',')).join('\r\n');
+  const scope = ($('filt').selectedOptions[0] || {}).textContent || '全部';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `加班记录_${Y}年${M + 1}月_${scope}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  $('xmsg').textContent = '已生成表格，共 ' + rows.length + ' 条记录';
+};
+
+function renderAdmin() {
+  $('teamList').innerHTML = teams.map(t => `<div class="item"><span>${esc(t.name)}　<span class="t">${profs.filter(p => p.team_id === t.id).length} 人</span></span><button class="del" data-tdel="${t.id}">删除</button></div>`).join('') || '<div class="empty">还没有小组</div>';
+  const topt = sel => `<option value="">未分组</option>` + teams.map(t => `<option value="${t.id}"${t.id === sel ? ' selected' : ''}>${esc(t.name)}</option>`).join('');
+  const ropt = sel => Object.entries(ROLE).map(([v, n]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${n}</option>`).join('');
+  $('memList').innerHTML = profs.map(p => `<div class="mem" data-id="${p.id}"><div><b>${esc(pname(p))}</b>　<span class="t">${esc(p.email)}</span></div>` +
+    `<div class="row" style="margin-top:6px"><div class="f"><select class="mt">${topt(p.team_id)}</select></div><div class="f"><select class="mr">${ropt(p.role)}</select></div><button class="sm ms">保存</button></div></div>`).join('');
+}
+$('addTeam').onclick = async () => {
+  const n = $('newTeam').value.trim(); if (!n) return;
+  const { error } = await sb.from('teams').insert({ name: n });
+  if (error) return alert('添加失败：' + error.message);
+  $('newTeam').value = ''; load();
+};
+$('teamList').onclick = async e => {
+  const id = e.target.dataset.tdel; if (!id || !confirm('删除这个小组？组里的人会变成未分组。')) return;
+  const { error } = await sb.from('teams').delete().eq('id', id);
+  if (error) return alert('删除失败：' + error.message); load();
+};
+$('memList').onclick = async e => {
+  if (!e.target.classList.contains('ms')) return;
+  const box = e.target.closest('.mem'), id = box.dataset.id, team = box.querySelector('.mt').value || null, role = box.querySelector('.mr').value;
+  if (id === me.id && role !== 'admin' && !confirm('你要把自己改成' + ROLE[role] + '吗？改完你就不能再管理分组了。')) return;
+  if (role === 'leader' && !team) return alert('小组长需要先选一个小组');
+  e.target.disabled = true; $('admsg').textContent = '';
+  const { error } = await sb.rpc('admin_set_member', { p_id: id, p_team: team, p_role: role });
+  e.target.disabled = false;
+  if (error) { $('admsg').textContent = '保存失败：' + error.message; return; }
+  e.target.textContent = '已保存'; setTimeout(() => e.target.textContent = '保存', 1500);
+  if (id === me.id) return boot({ id });
+  const p = profs.find(x => x.id === id); if (p) { p.team_id = team; p.role = role; }
+};
+
+$('cal').onclick = e => { const b = e.target.closest('.day'); if (!b) return; const k = b.dataset.k; sel[k] ? delete sel[k] : sel[k] = 1; renderMine(); };
+$('prev').onclick = () => { M--; if (M < 0) { M = 11; Y--; } sel = {}; load(); };
+$('next').onclick = () => { M++; if (M > 11) { M = 0; Y++; } sel = {}; load(); };
+$('clr').onclick = () => { sel = {}; renderMine(); };
+const pick = wk => { const n = new Date(Y, M + 1, 0).getDate(); for (let d = 1; d <= n; d++) { const w = new Date(Y, M, d).getDay(); if (!wk || (w > 0 && w < 6)) sel[key(Y, M, d)] = 1; } renderMine(); };
+$('wk').onclick = () => pick(true); $('all').onclick = () => pick(false);
+
+function setPeriod(p) {
+  period = p; $('pN').classList.toggle('on', p === 'noon'); $('pA').classList.toggle('on', p === 'afternoon');
+  $('st').value = p === 'noon' ? '12:00' : '17:30'; $('et').value = p === 'noon' ? '13:00' : '19:00'; calc();
+}
+function calc() {
+  const s = $('st').value, e = $('et').value; if (!s || !e) { $('calc').textContent = ''; return null; }
+  const m = toMin(e) - toMin(s);
+  if (m <= 0) { $('calc').textContent = '结束时间要晚于开始时间'; return null; }
+  $('calc').textContent = `时长 ${m} 分钟，计 ${fmt(billed(m))} 小时` + (billed(m) === 0 ? '（不足 30 分钟，不计时）' : '');
+  return m;
+}
+$('pN').onclick = () => setPeriod('noon'); $('pA').onclick = () => setPeriod('afternoon');
+$('st').oninput = calc; $('et').oninput = calc; calc();
+
+$('apply').onclick = async () => {
+  const m = calc(), dates = Object.keys(sel); $('amsg').textContent = '';
+  if (!m) return $('amsg').textContent = '请填写正确的开始和结束时间';
+  $('apply').disabled = true;
+  let r = await sb.from('overtime_records').delete().eq('user_id', me.id).eq('period', period).in('work_date', dates);
+  if (!r.error) r = await sb.from('overtime_records').insert(dates.map(d => ({ user_id: me.id, work_date: d, period, start_time: $('st').value, end_time: $('et').value, minutes: m })));
+  if (r.error) { $('amsg').textContent = '保存失败：' + r.error.message; $('apply').disabled = false; return; }
+  sel = {}; load();
+};
+$('list').onclick = async e => {
+  const id = e.target.dataset.del; if (!id || !confirm('删除这条记录？')) return;
+  const { error } = await sb.from('overtime_records').delete().eq('id', id);
+  if (error) return alert('删除失败：' + error.message); load();
+};
+</script>
+</body>
+</html>
